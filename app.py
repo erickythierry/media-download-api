@@ -102,7 +102,7 @@ def download():
                 "js_runtimes": {"deno": {}},
                 "remote_components": ["ejs:github"]
             }
-    elif "pinterest.com" in url:
+    elif "pinterest" in url:
         options = {
             **_ydl_base_opts(outtmpl),
             "format": "bv*+ba/b",
