@@ -1,0 +1,4 @@
+Flask>=3.0
+yt-dlp
+python-dotenv>=1.0.0
+yt-dlp-ejs>=0.3.1
