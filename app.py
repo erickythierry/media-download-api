@@ -2,7 +2,7 @@ import os
 import time
 import uuid
 
-from flask import Flask, request, jsonify, send_from_directory, url_for
+from flask import Flask, request, jsonify, send_from_directory
 
 from yt_dlp import YoutubeDL
 
