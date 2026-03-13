@@ -121,8 +121,8 @@ def download():
         # Download genérico
         options = {
             **_ydl_base_opts(outtmpl),
-            "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
-            "merge_output_format": "mp4",
+            # "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
+            # "merge_output_format": "mp4",
         }
 
     try:
