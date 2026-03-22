@@ -10,6 +10,12 @@ DOWNLOAD_DIR = os.getenv("DOWNLOAD_DIR", "downloads")
 # Proxy opcional (usado pelo yt-dlp quando definido)
 PROXY = os.getenv("PROXY") or os.getenv("YTDLP_PROXY")
 
+
+# Proxy rotativo com IPv6
+PROXY_V6 = os.getenv("PROXY_V6") # sem a porta no fim
+PROXY_V6_PORT_START = os.getenv("PROXY_V6_PORT_START")
+PROXY_V6_PORT_END = os.getenv("PROXY_V6_PORT_END")
+
 # Idade máxima dos arquivos em minutos antes de serem removidos
 CLEANUP_MAX_AGE_MINUTES = int(os.getenv("CLEANUP_MAX_AGE_MINUTES", "5"))
 

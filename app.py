@@ -1,16 +1,55 @@
 import os
 import time
 import uuid
+import random
 
 from flask import Flask, request, jsonify, send_from_directory
 from yt_dlp import YoutubeDL
 
-from config import DOWNLOAD_DIR, PROXY, CLEANUP_MAX_AGE_MINUTES, USE_DENO_EJS
+from config import (
+    DOWNLOAD_DIR,
+    PROXY,
+    PROXY_V6,
+    PROXY_V6_PORT_START,
+    PROXY_V6_PORT_END,
+    CLEANUP_MAX_AGE_MINUTES,
+    USE_DENO_EJS
+)
 
 app = Flask(__name__)
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
 
+# ---------- Proxy Resolver ----------
+def get_youtube_proxy():
+    """
+    Retorna proxy para YouTube:
+    - Usa PROXY_V6 com porta aleatória se disponível
+    - Caso contrário usa PROXY normal
+    """
+
+    if PROXY_V6 and PROXY_V6_PORT_START and PROXY_V6_PORT_END:
+        try:
+            start = int(PROXY_V6_PORT_START)
+            end = int(PROXY_V6_PORT_END)
+
+            port = random.randint(start, end)
+
+            # garante schema
+            if not PROXY_V6.startswith("http"):
+                proxy = f"http://{PROXY_V6}:{port}"
+            else:
+                proxy = f"{PROXY_V6}:{port}"
+
+            return proxy
+
+        except Exception as e:
+            print(f"[proxy_v6] erro ao montar proxy: {e}")
+
+    return PROXY
+
+
+# ---------- Cleanup ----------
 def clean_old_files(max_age_minutes=None):
     max_age = max_age_minutes if max_age_minutes is not None else CLEANUP_MAX_AGE_MINUTES
     now = time.time()
@@ -30,14 +69,17 @@ def clean_old_files(max_age_minutes=None):
                 print(f"[cleanup] Erro ao remover {filename}: {e}")
 
 
-def _ydl_base_opts(outtmpl):
+# ---------- yt-dlp base ----------
+def _ydl_base_opts(outtmpl, proxy=None):
     opts = {
         "outtmpl": outtmpl,
         "noplaylist": True,
         "quiet": True,
     }
 
-    if PROXY:
+    if proxy:
+        opts["proxy"] = proxy
+    elif PROXY:
         opts["proxy"] = PROXY
 
     if USE_DENO_EJS:
@@ -69,7 +111,7 @@ def index():
     return "running ✅"
 
 
-# ---------- Unified Download Endpoint ----------
+# ---------- Download ----------
 @app.route("/download", methods=["POST", "GET"])
 def download():
 
@@ -97,15 +139,17 @@ def download():
     # ---------- YOUTUBE ----------
     if is_youtube:
 
+        proxy = get_youtube_proxy()
+
         if is_audio:
             options = {
-                **_ydl_base_opts(outtmpl),
+                **_ydl_base_opts(outtmpl, proxy),
                 "format": "bestaudio[ext=m4a]",
             }
 
         else:
             options = {
-                **_ydl_base_opts(outtmpl),
+                **_ydl_base_opts(outtmpl, proxy),
                 "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
                 "merge_output_format": "mp4",
                 "js_runtimes": {"deno": {}},
@@ -117,10 +161,7 @@ def download():
 
         options = {
             **_ydl_base_opts(outtmpl),
-
-            # força melhor H264 + AAC
             "format": "best[vcodec=h264][acodec=aac][ext=mp4]/best[vcodec=h264][ext=mp4]",
-
             "merge_output_format": "mp4",
         }
 
