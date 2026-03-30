@@ -13,7 +13,9 @@ from config import (
     PROXY_V6_PORT_START,
     PROXY_V6_PORT_END,
     CLEANUP_MAX_AGE_MINUTES,
-    USE_DENO_EJS
+    USE_DENO_EJS,
+    get_ytdlp_js_runtimes,
+    YTDLP_COOKIE_PATH,
 )
 
 app = Flask(__name__)
@@ -83,8 +85,13 @@ def _ydl_base_opts(outtmpl, proxy=None):
         opts["proxy"] = PROXY
 
     if USE_DENO_EJS:
-        opts["js_runtimes"] = {"deno": {}}
+        jsr = get_ytdlp_js_runtimes()
+        if jsr:
+            opts["js_runtimes"] = jsr
         opts["remote_components"] = ["ejs:github"]
+
+    if YTDLP_COOKIE_PATH and os.path.isfile(YTDLP_COOKIE_PATH):
+        opts["cookiefile"] = YTDLP_COOKIE_PATH
 
     return opts
 
@@ -152,8 +159,6 @@ def download():
                 **_ydl_base_opts(outtmpl, proxy),
                 "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
                 "merge_output_format": "mp4",
-                "js_runtimes": {"deno": {}},
-                "remote_components": ["ejs:github"]
             }
 
     # ---------- TIKTOK ----------
