@@ -155,9 +155,14 @@ def download():
             }
 
         else:
+            # options = {
+            #     **_ydl_base_opts(outtmpl, proxy),
+            #     "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
+            #     "merge_output_format": "mp4",
+            # }
             options = {
                 **_ydl_base_opts(outtmpl, proxy),
-                "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
+                "format": "bestvideo[vcodec^=vp9]+bestaudio/best[vcodec^=vp9]/best[vcodec!^=av01]",
                 "merge_output_format": "mp4",
             }
 
