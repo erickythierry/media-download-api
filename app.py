@@ -146,6 +146,7 @@ def download():
     # ---------- YOUTUBE ----------
     if is_youtube:
 
+        platform = "youtube"
         proxy = get_youtube_proxy()
 
         if is_audio:
@@ -169,6 +170,7 @@ def download():
     # ---------- TIKTOK ----------
     elif is_tiktok:
 
+        platform = "tiktok"
         options = {
             **_ydl_base_opts(outtmpl),
             "format": "best[vcodec=h264][acodec=aac][ext=mp4]/best[vcodec=h264][ext=mp4]",
@@ -178,6 +180,7 @@ def download():
     # ---------- PINTEREST ----------
     elif "pinterest" in url:
 
+        platform = "pinterest"
         options = {
             **_ydl_base_opts(outtmpl),
             "format": "bv*+ba/b",
@@ -187,6 +190,7 @@ def download():
     # ---------- TWITTER / X / FACEBOOK ----------
     elif "x.com" in url or "twitter.com" in url or "facebook.com" in url or "fb.watch" in url:
 
+        platform = "facebook" if ("facebook.com" in url or "fb.watch" in url) else "twitter"
         if "x.com" in url:
             url = url.replace("x.com", "twitter.com")
 
@@ -199,9 +203,12 @@ def download():
     # ---------- GENERIC ----------
     else:
 
+        platform = "generic"
         options = {
             **_ydl_base_opts(outtmpl),
         }
+
+    print(f"[download] plataforma={platform} type={download_type} url={url}", flush=True)
 
     try:
 
@@ -211,14 +218,17 @@ def download():
         base_url = request.host_url.rstrip("/")
         download_url = f"{base_url}/files/{filename}"
 
+        print(f"[download] OK plataforma={platform} arquivo={filename}", flush=True)
+
         return jsonify({
             "success": True,
             "file": download_url,
             "type": download_type,
-            "platform": "youtube" if is_youtube else "tiktok" if is_tiktok else "generic"
+            "platform": platform
         })
 
     except Exception as e:
+        print(f"[download] ERRO plataforma={platform} url={url}: {e}", flush=True)
         return jsonify({
             "success": False,
             "error": str(e)
