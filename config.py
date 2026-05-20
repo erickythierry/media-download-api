@@ -101,15 +101,18 @@ def _resolve_ytdlp_cookiefile() -> str | None:
     """
     Caminho absoluto do cookies.txt para o yt-dlp, ou None.
 
-    Prioridade: YTDLP_COOKIES_FILE (se existir) > YTDLP_COOKIES_B64 (grava em /tmp).
+    Prioridade: YTDLP_COOKIES_FILE > YTDLP_COOKIES_B64 (grava em /tmp).
+    Para YTDLP_COOKIES_FILE devolvemos o path mesmo se o arquivo ainda não
+    existir: o renovador automático (cookie_refresher) cria/atualiza o arquivo
+    e o `_ydl_base_opts` revalida com `os.path.isfile` antes de cada download.
     """
-    if _RAW_COOKIES_FILE and os.path.isfile(_RAW_COOKIES_FILE):
-        return _RAW_COOKIES_FILE
     if _RAW_COOKIES_FILE:
-        print(
-            f"[config] YTDLP_COOKIES_FILE não encontrado: {_RAW_COOKIES_FILE}",
-            flush=True,
-        )
+        if not os.path.isfile(_RAW_COOKIES_FILE):
+            print(
+                f"[config] YTDLP_COOKIES_FILE ainda não existe (será criado pelo refresher): {_RAW_COOKIES_FILE}",
+                flush=True,
+            )
+        return _RAW_COOKIES_FILE
 
     if not _RAW_COOKIES_B64 or not str(_RAW_COOKIES_B64).strip():
         return None
@@ -140,3 +143,40 @@ def _resolve_ytdlp_cookiefile() -> str | None:
 
 # Caminho efetivo para cookiefile do yt-dlp (resolvido na importação do módulo).
 YTDLP_COOKIE_PATH = _resolve_ytdlp_cookiefile()
+
+
+# ---------- Renovador automático de cookies (Playwright) ----------
+def _env_bool(name: str, default: bool) -> bool:
+    raw = (os.getenv(name) or "").strip().lower()
+    if not raw:
+        return default
+    return raw not in ("0", "false", "no", "off")
+
+
+# Habilita/desabilita o renovador embutido no Flask.
+COOKIE_REFRESH_ENABLED = _env_bool("COOKIE_REFRESH_ENABLED", True)
+
+# Intervalo entre renovações (horas).
+COOKIE_REFRESH_INTERVAL_HOURS = float(os.getenv("COOKIE_REFRESH_INTERVAL_HOURS", "6"))
+
+# Pasta persistente do perfil do Chromium (sessão logada).
+BROWSER_PROFILE_DIR = os.getenv("BROWSER_PROFILE_DIR", "browser_profile")
+
+# Roda em headless? Em produção (Docker) deve ser True.
+# No host, deixar False só ajuda em debug local.
+COOKIE_REFRESH_HEADLESS = _env_bool("COOKIE_REFRESH_HEADLESS", True)
+
+# Onde o renovador grava o cookies.txt quando YTDLP_COOKIES_FILE não está setado.
+COOKIE_REFRESH_OUTPUT = (
+    os.getenv("YTDLP_COOKIES_FILE")
+    or os.path.join(os.path.dirname(os.path.abspath(__file__)), "youtube_cookies.txt")
+)
+
+# Se o renovador está habilitado e nenhum cookiefile foi configurado via env,
+# o yt-dlp deve ler exatamente o arquivo que o renovador grava.
+if COOKIE_REFRESH_ENABLED and not YTDLP_COOKIE_PATH:
+    YTDLP_COOKIE_PATH = COOKIE_REFRESH_OUTPUT
+    print(
+        f"[config] cookiefile do yt-dlp apontando para o renovador automático: {YTDLP_COOKIE_PATH}",
+        flush=True,
+    )

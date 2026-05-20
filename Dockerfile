@@ -32,8 +32,15 @@ ENV YTDLP_JS_RUNTIMES=auto \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Chromium do Playwright para o renovador automático de cookies do YouTube.
+# `install-deps` resolve as libs do sistema (libnss3, libatk, libdrm, etc).
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+RUN python -m playwright install-deps chromium \
+    && python -m playwright install chromium \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY . .
-RUN mkdir -p downloads && chmod +x start.sh
+RUN mkdir -p downloads browser_profile && chmod +x start.sh
 
 EXPOSE 5000
 

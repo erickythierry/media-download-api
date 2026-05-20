@@ -3,3 +3,5 @@ yt-dlp
 python-dotenv>=1.0.0
 yt-dlp-ejs>=0.3.1
 yt-dlp[default,curl-cffi]
+APScheduler>=3.10
+playwright>=1.45

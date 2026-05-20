@@ -17,9 +17,13 @@ from config import (
     get_ytdlp_js_runtimes,
     YTDLP_COOKIE_PATH,
 )
+from cookie_refresher import refresh_now, start_scheduler
 
 app = Flask(__name__)
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+
+# Sobe o renovador de cookies (idempotente; respeita COOKIE_REFRESH_ENABLED).
+start_scheduler()
 
 
 # ---------- Proxy Resolver ----------
@@ -233,6 +237,17 @@ def download():
             "success": False,
             "error": str(e)
         }), 500
+
+
+# ---------- Cookie refresh (manual) ----------
+@app.route("/admin/refresh-cookies", methods=["POST"])
+def admin_refresh_cookies():
+    try:
+        result = refresh_now()
+        status = 200 if result.get("ok") else 409
+        return jsonify(result), status
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 
 # ---------- File server ----------
