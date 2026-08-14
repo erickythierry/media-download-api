@@ -25,6 +25,7 @@ from config import (
     COOKIE_REFRESH_HEADLESS,
     COOKIE_REFRESH_INTERVAL_HOURS,
     COOKIE_REFRESH_OUTPUT,
+    TIKTOK_UA,
 )
 
 _RELEVANT_DOMAIN_SUFFIXES = (
@@ -32,6 +33,8 @@ _RELEVANT_DOMAIN_SUFFIXES = (
     "youtu.be",
     "google.com",
     "googlevideo.com",
+    # TikTok: cookies anônimos (ttwid/_waftokenid) que o WAF exige no download.
+    "tiktok.com",
 )
 
 # Lock pra evitar duas renovações simultâneas (scheduler + chamada manual).
@@ -152,6 +155,9 @@ def refresh_now(headless: bool | None = None) -> dict:
                     "--disable-blink-features=AutomationControlled",
                 ],
                 viewport={"width": 1280, "height": 800},
+                # UA fixo: o download do TikTok (yt-dlp) precisa do MESMO UA
+                # que gerou os cookies, senão o WAF bloqueia.
+                user_agent=TIKTOK_UA,
             )
             try:
                 page = context.new_page()
@@ -168,6 +174,19 @@ def refresh_now(headless: bool | None = None) -> dict:
                     page.wait_for_load_state("networkidle", timeout=15000)
                 except Exception:
                     pass
+
+                # TikTok: sem login — os cookies anônimos do WAF (ttwid/msToken/
+                # _waftokenid) são gerados pelo JS da página. Espera o ttwid
+                # aparecer; sem ele, não há o que renovar.
+                try:
+                    page.goto("https://www.tiktok.com/", wait_until="domcontentloaded", timeout=45000)
+                    for _ in range(15):
+                        if any(c.get("name") == "ttwid" for c in context.cookies()):
+                            time.sleep(2)  # deixa msToken/_waftokenid chegarem
+                            break
+                        time.sleep(1)
+                except Exception as e:
+                    print(f"[cookie_refresher] AVISO: falha ao coletar cookies do TikTok: {e}", flush=True)
 
                 cookies = context.cookies()
             finally:

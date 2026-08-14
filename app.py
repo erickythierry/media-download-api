@@ -1,3 +1,4 @@
+import glob
 import os
 import time
 import uuid
@@ -13,6 +14,7 @@ from config import (
     PROXY_V6_PORT_START,
     PROXY_V6_PORT_END,
     CLEANUP_MAX_AGE_MINUTES,
+    TIKTOK_UA,
     USE_DENO_EJS,
     get_ytdlp_js_runtimes,
     YTDLP_COOKIE_PATH,
@@ -76,12 +78,17 @@ def clean_old_files(max_age_minutes=None):
 
 
 # ---------- yt-dlp base ----------
-def _ydl_base_opts(outtmpl, proxy=None):
+def _ydl_base_opts(outtmpl, proxy=None, user_agent=None):
     opts = {
         "outtmpl": outtmpl,
         "noplaylist": True,
         "quiet": True,
     }
+
+    if user_agent:
+        # http_headers (e não user_agent): o impersonate do yt-dlp sobrescreve
+        # o param user_agent, mas headers explícitos têm prioridade final.
+        opts["http_headers"] = {"User-Agent": user_agent}
 
     if proxy:
         opts["proxy"] = proxy
@@ -101,9 +108,17 @@ def _ydl_base_opts(outtmpl, proxy=None):
 
 
 def download_media(url: str, options: dict) -> str:
+    outtmpl = options["outtmpl"]  # salva antes — o yt-dlp muta o dict de opts
     with YoutubeDL(options) as ydl:
-        info = ydl.extract_info(url, download=True)
-        return ydl.prepare_filename(info)
+        ydl.extract_info(url, download=True)
+    # yt-dlp 2026.07 não preenche ext/filepath no info de algumas plataformas
+    # (ex.: Twitter devolve info vazio pós-download) — resolve pelo template do
+    # uuid, que é único por request. Mais novo por segurança (arquivos parciais).
+    base = os.path.splitext(os.path.basename(outtmpl))[0]
+    matches = glob.glob(os.path.join(DOWNLOAD_DIR, f"{base}.*"))
+    if not matches:
+        raise RuntimeError("download não gerou arquivo")
+    return max(matches, key=os.path.getmtime)
 
 
 def _get_url_from_request():
@@ -176,7 +191,9 @@ def download():
 
         platform = "tiktok"
         options = {
-            **_ydl_base_opts(outtmpl),
+            # UA fixo obrigatório: o WAF ata o token anti-bot ao UA que gerou
+            # os cookies (cookie_refresher). Sem ele → "Site Maintenance".
+            **_ydl_base_opts(outtmpl, user_agent=TIKTOK_UA),
             "format": "best[vcodec=h264][acodec=aac][ext=mp4]/best[vcodec=h264][ext=mp4]",
             "merge_output_format": "mp4",
         }

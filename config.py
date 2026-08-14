@@ -75,6 +75,15 @@ PORT = int(os.getenv("PORT", "5000"))
 # Desative com YTDLP_USE_EJS=0 se não quiser rede extra / EJS.
 USE_DENO_EJS = os.getenv("YTDLP_USE_EJS", "1").strip().lower() not in ("0", "false", "no")
 
+# UA fixo do TikTok: o WAF do TikTok ata o token anti-bot ao User-Agent da
+# sessão que gerou os cookies (cookie_refresher). O download precisa mandar o
+# MESMO UA, senão devolve "Site Maintenance".
+TIKTOK_UA = os.getenv(
+    "TIKTOK_UA",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+)
+
 # Cookies YouTube: caminho OU conteúdo em Base64 (útil em Docker sem volume).
 _RAW_COOKIES_FILE = (os.getenv("YTDLP_COOKIES_FILE") or "").strip()
 _RAW_COOKIES_B64 = os.getenv("YTDLP_COOKIES_B64")
