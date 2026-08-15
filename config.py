@@ -171,7 +171,7 @@ def _env_bool(name: str, default: bool) -> bool:
 COOKIE_REFRESH_ENABLED = _env_bool("COOKIE_REFRESH_ENABLED", True)
 
 # Intervalo entre renovações (horas).
-COOKIE_REFRESH_INTERVAL_HOURS = float(os.getenv("COOKIE_REFRESH_INTERVAL_HOURS", "6"))
+COOKIE_REFRESH_INTERVAL_HOURS = float(os.getenv("COOKIE_REFRESH_INTERVAL_HOURS", "2"))
 
 # Pasta persistente do perfil do Chromium (sessão logada).
 BROWSER_PROFILE_DIR = os.getenv("BROWSER_PROFILE_DIR", "browser_profile")
