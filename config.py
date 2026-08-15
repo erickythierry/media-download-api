@@ -75,6 +75,11 @@ PORT = int(os.getenv("PORT", "5000"))
 # Desative com YTDLP_USE_EJS=0 se não quiser rede extra / EJS.
 USE_DENO_EJS = os.getenv("YTDLP_USE_EJS", "1").strip().lower() not in ("0", "false", "no")
 
+# Retries do YouTube quando o proxy V6 rotativo cai numa porta cujo IPv6 de
+# saída está flagado pelo YouTube (403 no stream de áudio). Cada tentativa
+# re-sorteia a porta. Default 4 (~94% de sucesso com ~50% de portas boas).
+YOUTUBE_PROXY_RETRIES = int(os.getenv("YOUTUBE_PROXY_RETRIES", "4"))
+
 # UA fixo do TikTok: o WAF do TikTok ata o token anti-bot ao User-Agent da
 # sessão que gerou os cookies (cookie_refresher). O download precisa mandar o
 # MESMO UA, senão devolve "Site Maintenance".

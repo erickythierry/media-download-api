@@ -16,6 +16,7 @@ from config import (
     CLEANUP_MAX_AGE_MINUTES,
     TIKTOK_UA,
     USE_DENO_EJS,
+    YOUTUBE_PROXY_RETRIES,
     get_ytdlp_js_runtimes,
     YTDLP_COOKIE_PATH,
 )
@@ -119,6 +120,23 @@ def download_media(url: str, options: dict) -> str:
     if not matches:
         raise RuntimeError("download não gerou arquivo")
     return max(matches, key=os.path.getmtime)
+
+
+def _download_with_proxy_retry(url: str, options: dict) -> str:
+    """
+    YouTube roda atrás do proxy V6 rotativo (porta aleatória). O YouTube
+    bloqueia parte dos IPs de saída — stream de áudio cai com 403 em ~50% das
+    portas. A cada falha 403, re-sorteia a porta e tenta de novo.
+    """
+    for attempt in range(YOUTUBE_PROXY_RETRIES):
+        try:
+            return download_media(url, options)
+        except Exception as e:
+            is_last = attempt == YOUTUBE_PROXY_RETRIES - 1
+            if is_last or "403" not in str(e) or not options.get("proxy"):
+                raise
+            options["proxy"] = get_youtube_proxy()
+    raise RuntimeError("unreachable")
 
 
 def _get_url_from_request():
@@ -233,7 +251,11 @@ def download():
 
     try:
 
-        file_path = download_media(url, options)
+        if is_youtube and options.get("proxy"):
+            # proxy V6 rotativo: re-sorteia a porta se o YouTube devolver 403
+            file_path = _download_with_proxy_retry(url, options)
+        else:
+            file_path = download_media(url, options)
         filename = os.path.basename(file_path)
 
         base_url = request.host_url.rstrip("/")
