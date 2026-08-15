@@ -79,7 +79,7 @@ def clean_old_files(max_age_minutes=None):
 
 
 # ---------- yt-dlp base ----------
-def _ydl_base_opts(outtmpl, proxy=None, user_agent=None):
+def _ydl_base_opts(outtmpl, proxy=None, user_agent=None, use_global_proxy=True):
     opts = {
         "outtmpl": outtmpl,
         "noplaylist": True,
@@ -93,7 +93,7 @@ def _ydl_base_opts(outtmpl, proxy=None, user_agent=None):
 
     if proxy:
         opts["proxy"] = proxy
-    elif PROXY:
+    elif PROXY and use_global_proxy:
         opts["proxy"] = PROXY
 
     if USE_DENO_EJS:
@@ -211,7 +211,9 @@ def download():
         options = {
             # UA fixo obrigatório: o WAF ata o token anti-bot ao UA que gerou
             # os cookies (cookie_refresher). Sem ele → "Site Maintenance".
-            **_ydl_base_opts(outtmpl, user_agent=TIKTOK_UA),
+            # Sem proxy: o TikTok devolve 403 no IP do proxy (o YouTube é o
+            # contrário — só passa via proxy). Conexão direta funciona.
+            **_ydl_base_opts(outtmpl, user_agent=TIKTOK_UA, use_global_proxy=False),
             "format": "best[vcodec=h264][acodec=aac][ext=mp4]/best[vcodec=h264][ext=mp4]",
             "merge_output_format": "mp4",
         }
