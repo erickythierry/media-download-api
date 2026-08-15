@@ -251,7 +251,6 @@ def start_scheduler() -> bool:
         id="youtube_cookie_refresh",
         max_instances=1,
         coalesce=True,
-        next_run_time=None,  # primeira execução é disparada manualmente abaixo
     )
     scheduler.start()
     print(

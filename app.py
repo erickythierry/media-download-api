@@ -1,5 +1,7 @@
 import glob
+import copy
 import os
+import threading
 import time
 import uuid
 import random
@@ -120,6 +122,74 @@ def download_media(url: str, options: dict) -> str:
     if not matches:
         raise RuntimeError("download não gerou arquivo")
     return max(matches, key=os.path.getmtime)
+
+
+_TIKTOK_RETRY_ERRORS = (
+    "Unable to extract universal data for rehydration",
+    "Unexpected response from webpage request",
+    "Unable to extract challenge data",
+    "Unable to solve JS challenge",
+    "Site Maintenance",
+)
+
+
+def _clean_request_files(outtmpl: str) -> None:
+    base = os.path.splitext(os.path.basename(outtmpl))[0]
+    for path in glob.glob(os.path.join(DOWNLOAD_DIR, f"{base}.*")):
+        try:
+            os.remove(path)
+        except FileNotFoundError:
+            pass
+
+
+def _trigger_cookie_refresh() -> None:
+    threading.Thread(
+        target=refresh_now,
+        name="tiktok-cookie-refresh",
+        daemon=True,
+    ).start()
+
+
+def _download_tiktok_with_retry(url: str, options: dict) -> str:
+    """Alterna sessão e rota de saída; renova cookies após esgotar fallbacks."""
+    anonymous_options = copy.deepcopy(options)
+    anonymous_options.pop("cookiefile", None)
+
+    attempts = [
+        ("direto com cookies", copy.deepcopy(options)),
+        ("direto sem cookies", anonymous_options),
+    ]
+    if PROXY:
+        proxy_options = copy.deepcopy(options)
+        proxy_options["proxy"] = PROXY
+        anonymous_proxy_options = copy.deepcopy(anonymous_options)
+        anonymous_proxy_options["proxy"] = PROXY
+        attempts.extend([
+            ("proxy com cookies", proxy_options),
+            ("proxy sem cookies", anonymous_proxy_options),
+        ])
+
+    last_error = None
+    for index, (label, attempt_options) in enumerate(attempts):
+        try:
+            return download_media(url, attempt_options)
+        except Exception as error:
+            if not any(message in str(error) for message in _TIKTOK_RETRY_ERRORS):
+                raise
+            last_error = error
+            _clean_request_files(options["outtmpl"])
+            if index + 1 < len(attempts):
+                print(
+                    f"[download] TikTok falhou via {label}; tentando {attempts[index + 1][0]}: {error}",
+                    flush=True,
+                )
+
+    print(
+        f"[download] TikTok esgotou fallbacks; agendando renovação: {last_error}",
+        flush=True,
+    )
+    _trigger_cookie_refresh()
+    raise last_error
 
 
 def _download_with_proxy_retry(url: str, options: dict) -> str:
@@ -256,6 +326,8 @@ def download():
         if is_youtube and options.get("proxy"):
             # proxy V6 rotativo: re-sorteia a porta se o YouTube devolver 403
             file_path = _download_with_proxy_retry(url, options)
+        elif is_tiktok:
+            file_path = _download_tiktok_with_retry(url, options)
         else:
             file_path = download_media(url, options)
         filename = os.path.basename(file_path)
