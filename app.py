@@ -110,6 +110,11 @@ def _ydl_base_opts(outtmpl, proxy=None, user_agent=None, use_global_proxy=True):
     return opts
 
 
+def _get_tmpl_base(outtmpl) -> str:
+    raw = outtmpl.get("default", "") if isinstance(outtmpl, dict) else str(outtmpl)
+    return os.path.splitext(os.path.basename(raw))[0]
+
+
 def download_media(url: str, options: dict) -> str:
     outtmpl = options["outtmpl"]  # salva antes — o yt-dlp muta o dict de opts
     with YoutubeDL(options) as ydl:
@@ -117,7 +122,7 @@ def download_media(url: str, options: dict) -> str:
     # yt-dlp 2026.07 não preenche ext/filepath no info de algumas plataformas
     # (ex.: Twitter devolve info vazio pós-download) — resolve pelo template do
     # uuid, que é único por request. Mais novo por segurança (arquivos parciais).
-    base = os.path.splitext(os.path.basename(outtmpl))[0]
+    base = _get_tmpl_base(outtmpl)
     matches = glob.glob(os.path.join(DOWNLOAD_DIR, f"{base}.*"))
     if not matches:
         raise RuntimeError("download não gerou arquivo")
@@ -133,8 +138,8 @@ _TIKTOK_RETRY_ERRORS = (
 )
 
 
-def _clean_request_files(outtmpl: str) -> None:
-    base = os.path.splitext(os.path.basename(outtmpl))[0]
+def _clean_request_files(outtmpl) -> None:
+    base = _get_tmpl_base(outtmpl)
     for path in glob.glob(os.path.join(DOWNLOAD_DIR, f"{base}.*")):
         try:
             os.remove(path)
