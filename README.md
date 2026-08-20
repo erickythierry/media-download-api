@@ -16,11 +16,16 @@ Integra em um único projeto as APIs de: YouTube/geral, Pinterest, Twitter/X e F
 Copie `.env.example` para `.env` e ajuste se precisar:
 
 - `PROXY` ou `YTDLP_PROXY`: proxy para o yt-dlp
+- `PROXY_V6`, `PROXY_V6_PORT_START`, `PROXY_V6_PORT_END`: proxy rotativo IPv6 para YouTube
 - `DOWNLOAD_DIR`: pasta de downloads (default: `downloads`)
 - `CLEANUP_MAX_AGE_MINUTES`: idade máxima dos arquivos antes de limpar (default: 5)
 - `PORT`: porta do servidor (default: 5000)
 - `AUTO_EXPIRE_SECONDS`: opcional; agenda exclusão do arquivo após N segundos
 - `YTDLP_USE_EJS`: `1` (default) habilita EJS do yt-dlp; use `0` para desativar
+- `POT_SERVER_ENABLED`: `1` (default) ativa o servidor local BgUtils / PO Token em porta 4416
+- `POT_SERVER_PORT`: porta do servidor POT (default: 4416)
+- `COOKIE_REFRESH_ENABLED`: `1` (default) ativa o renovador automático de cookies via Playwright
+- `COOKIE_REFRESH_INTERVAL_HOURS`: intervalo em horas para renovação (default: 2)
 - `YTDLP_COOKIES_FILE`: caminho para `cookies.txt` (Netscape) do YouTube — quando aparece “Sign in to confirm you’re not a bot”. Guia: **[YOUTUBE-COOKIES.md](YOUTUBE-COOKIES.md)**  
 - `YTDLP_COOKIES_B64`: o mesmo arquivo codificado em **Base64** (uma linha). Útil no Docker sem montar volume: o processo grava um `.txt` em `/tmp` na subida. **Prioridade:** se `YTDLP_COOKIES_FILE` existir no disco, ele vale; senão usa o Base64.
 
