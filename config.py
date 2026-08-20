@@ -68,6 +68,11 @@ PROXY_V6_PORT_END = os.getenv("PROXY_V6_PORT_END")
 # Idade máxima dos arquivos em minutos antes de serem removidos
 CLEANUP_MAX_AGE_MINUTES = int(os.getenv("CLEANUP_MAX_AGE_MINUTES", "5"))
 
+# PO Token Server (BgUtils / BotGuard)
+POT_SERVER_ENABLED = os.getenv("POT_SERVER_ENABLED", "1").strip().lower() not in ("0", "false", "no")
+POT_SERVER_PORT = int(os.getenv("POT_SERVER_PORT", "4416"))
+POT_SERVER_URL = os.getenv("POT_SERVER_URL", f"http://127.0.0.1:{POT_SERVER_PORT}")
+
 # Porta do servidor
 PORT = int(os.getenv("PORT", "5000"))
 

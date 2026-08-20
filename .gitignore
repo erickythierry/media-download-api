@@ -10,3 +10,5 @@ venv/
 CLAUDE.md
 # perfil persistente do Chromium do renovador (contém sessão logada)
 browser_profile/
+pot_server/node_modules/
+pot_server/.cache/

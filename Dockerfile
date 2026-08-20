@@ -42,7 +42,10 @@ RUN python -m playwright install-deps chromium \
 COPY . .
 RUN mkdir -p downloads browser_profile && chmod +x start.sh
 
-EXPOSE 5000
+# Instala dependências do pot_server (BgUtils PO Token server) usando Deno
+RUN cd pot_server && deno install --allow-scripts=npm:canvas --frozen
+
+EXPOSE 5000 4416
 
 ENV PORT=5000
 CMD ["sh", "start.sh"]

@@ -21,14 +21,20 @@ from config import (
     YOUTUBE_PROXY_RETRIES,
     get_ytdlp_js_runtimes,
     YTDLP_COOKIE_PATH,
+    POT_SERVER_ENABLED,
+    POT_SERVER_URL,
 )
 from cookie_refresher import refresh_now, start_scheduler
+from pot_manager import start_pot_server
 
 app = Flask(__name__)
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
 # Sobe o renovador de cookies (idempotente; respeita COOKIE_REFRESH_ENABLED).
 start_scheduler()
+
+# Sobe o servidor local de PO Token (BgUtils / BotGuard).
+start_pot_server()
 
 
 # ---------- Proxy Resolver ----------
@@ -261,9 +267,15 @@ def download():
         platform = "youtube"
         proxy = get_youtube_proxy()
 
+        extractor_args = {
+            "youtube": {"player_client": ["web_embedded", "mweb", "web"]},
+        }
+        if POT_SERVER_ENABLED:
+            extractor_args["youtubepot-bgutilhttp"] = {"base_url": [POT_SERVER_URL]}
+
         youtube_opts = {
             **_ydl_base_opts(outtmpl, proxy),
-            "extractor_args": {"youtube": {"player_client": ["web_embedded", "web", "tv"]}},
+            "extractor_args": extractor_args,
         }
 
         if is_audio:
