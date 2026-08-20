@@ -261,15 +261,20 @@ def download():
         platform = "youtube"
         proxy = get_youtube_proxy()
 
+        youtube_opts = {
+            **_ydl_base_opts(outtmpl, proxy),
+            "extractor_args": {"youtube": {"player_client": ["web_embedded", "web", "tv"]}},
+        }
+
         if is_audio:
             options = {
-                **_ydl_base_opts(outtmpl, proxy),
+                **youtube_opts,
                 "format": "bestaudio[ext=m4a]",
             }
 
         else:
             options = {
-                **_ydl_base_opts(outtmpl, proxy),
+                **youtube_opts,
                 "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
                 "merge_output_format": "mp4",
             }
