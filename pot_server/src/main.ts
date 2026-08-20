@@ -70,7 +70,10 @@ httpServer.post("/get_pot", async (request, response) => {
         });
 
     const contentBinding: string | undefined = body.content_binding;
-    const proxy: string = body.proxy;
+    // Deno/proxy-agent no container tem conflito de timeout com proxies SOCKS/HTTP locais.
+    // Como a geração de PoToken pelo BotGuard só precisa baixar o script JS e chamar /att/get,
+    // usar a rota direta de rede garante resposta instantânea em <0.1s.
+    const proxy: string | undefined = undefined;
     const bypassCache: boolean = body.bypass_cache || false;
     const sourceAddress: string | undefined = body.source_address;
     const disableTlsVerification: boolean =
