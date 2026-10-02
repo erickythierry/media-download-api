@@ -5,6 +5,7 @@ import threading
 import time
 import uuid
 import random
+from urllib.parse import urlsplit
 
 from flask import Flask, request, jsonify, send_from_directory
 from yt_dlp import YoutubeDL
@@ -41,25 +42,19 @@ start_pot_server()
 def get_youtube_proxy():
     """
     Retorna proxy para YouTube:
-    - Usa PROXY_V6 com porta aleatória se disponível
+    - PROXY_V6 com porta: usa como está (proxy rotaciona o IPv6 sozinho)
+    - PROXY_V6 sem porta + faixa: sorteia uma porta da faixa
     - Caso contrário usa PROXY normal
     """
 
-    if PROXY_V6 and PROXY_V6_PORT_START and PROXY_V6_PORT_END:
+    if PROXY_V6:
+        proxy = PROXY_V6 if "://" in PROXY_V6 else f"http://{PROXY_V6}"
         try:
-            start = int(PROXY_V6_PORT_START)
-            end = int(PROXY_V6_PORT_END)
-
-            port = random.randint(start, end)
-
-            # garante schema
-            if not PROXY_V6.startswith("http"):
-                proxy = f"http://{PROXY_V6}:{port}"
-            else:
-                proxy = f"{PROXY_V6}:{port}"
-
-            return proxy
-
+            if urlsplit(proxy).port:
+                return proxy
+            if PROXY_V6_PORT_START and PROXY_V6_PORT_END:
+                port = random.randint(int(PROXY_V6_PORT_START), int(PROXY_V6_PORT_END))
+                return f"{proxy}:{port}"
         except Exception as e:
             print(f"[proxy_v6] erro ao montar proxy: {e}")
 

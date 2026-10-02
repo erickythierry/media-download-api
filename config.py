@@ -61,7 +61,7 @@ PROXY = os.getenv("PROXY") or os.getenv("YTDLP_PROXY")
 
 
 # Proxy rotativo com IPv6
-PROXY_V6 = os.getenv("PROXY_V6") # sem a porta no fim
+PROXY_V6 = os.getenv("PROXY_V6") # com porta = fixa (ignora a faixa); sem porta = sorteia na faixa
 PROXY_V6_PORT_START = os.getenv("PROXY_V6_PORT_START")
 PROXY_V6_PORT_END = os.getenv("PROXY_V6_PORT_END")
 

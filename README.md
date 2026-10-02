@@ -16,7 +16,7 @@ Integra em um único projeto as APIs de: YouTube/geral, Pinterest, Twitter/X e F
 Copie `.env.example` para `.env` e ajuste se precisar:
 
 - `PROXY` ou `YTDLP_PROXY`: proxy para o yt-dlp
-- `PROXY_V6`, `PROXY_V6_PORT_START`, `PROXY_V6_PORT_END`: proxy rotativo IPv6 para YouTube
+- `PROXY_V6`, `PROXY_V6_PORT_START`, `PROXY_V6_PORT_END`: proxy rotativo IPv6 para YouTube. Se `PROXY_V6` tiver porta, ela é usada fixa e a faixa é ignorada
 - `DOWNLOAD_DIR`: pasta de downloads (default: `downloads`)
 - `CLEANUP_MAX_AGE_MINUTES`: idade máxima dos arquivos antes de limpar (default: 5)
 - `PORT`: porta do servidor (default: 5000)
