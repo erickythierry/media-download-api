@@ -1,6 +1,6 @@
 # -------- STAGE 1: binário Deno (yt-dlp EJS — mínimo Deno 2.0) --------
 # Versões antigas (ex.: 1.42.x) são ignoradas pelo yt-dlp; veja MIN_SUPPORTED_VERSION em yt_dlp.
-ARG DENO_VERSION=2.7.9
+ARG DENO_VERSION=2.9.5
 FROM denoland/deno:bin-${DENO_VERSION} AS deno
 
 # -------- STAGE 2: app Python --------
@@ -45,7 +45,7 @@ RUN mkdir -p downloads browser_profile && chmod +x start.sh
 # Instala dependências do pot_server (BgUtils PO Token server) usando Deno
 RUN cd pot_server && deno install --allow-scripts=npm:canvas --frozen
 
-EXPOSE 5000 4416
+EXPOSE 5000
 
 ENV PORT=5000
 CMD ["sh", "start.sh"]
