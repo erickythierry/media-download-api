@@ -26,7 +26,7 @@ from config import (
     POT_SERVER_URL,
 )
 from cookie_refresher import refresh_now, start_scheduler
-from pot_manager import start_pot_server
+from pot_manager import start_pot_server, start_pot_watchdog
 
 app = Flask(__name__)
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
@@ -36,6 +36,7 @@ start_scheduler()
 
 # Sobe o servidor local de PO Token (BgUtils / BotGuard).
 start_pot_server()
+start_pot_watchdog()
 
 
 # ---------- Proxy Resolver ----------
@@ -60,6 +61,12 @@ def get_youtube_proxy():
 
     return PROXY
 
+
+def _youtube_extractor_args():
+    args = {"youtube": {"player_client": ["web_embedded", "mweb", "web"]}}
+    if POT_SERVER_ENABLED:
+        args["youtubepot-bgutilhttp"] = {"base_url": [POT_SERVER_URL]}
+    return args
 
 # ---------- Cleanup ----------
 def clean_old_files(max_age_minutes=None):
@@ -262,15 +269,9 @@ def download():
         platform = "youtube"
         proxy = get_youtube_proxy()
 
-        extractor_args = {
-            "youtube": {"player_client": ["web_embedded", "mweb", "web"]},
-        }
-        if POT_SERVER_ENABLED:
-            extractor_args["youtubepot-bgutilhttp"] = {"base_url": [POT_SERVER_URL]}
-
         youtube_opts = {
             **_ydl_base_opts(outtmpl, proxy),
-            "extractor_args": extractor_args,
+            "extractor_args": _youtube_extractor_args(),
         }
 
         if is_audio:
@@ -368,6 +369,67 @@ def download():
             "error": str(e)
         }), 500
 
+
+# ---------- YouTube: info e busca (saem pelo PROXY, IP residencial) ----------
+def _formatar_duracao(segundos) -> str:
+    h, resto = divmod(int(segundos or 0), 3600)
+    m, s = divmod(resto, 60)
+    return f"{h}:{m:02d}:{s:02d}" if h else f"{m}:{s:02d}"
+
+def _youtube_extract(alvo: str, **extra) -> dict:
+    opts = {
+        **_ydl_base_opts(os.path.join(DOWNLOAD_DIR, "%(id)s.%(ext)s")),
+        "extractor_args": _youtube_extractor_args(),
+        **extra,
+    }
+    with YoutubeDL(opts) as ydl:
+        return ydl.extract_info(alvo, download=False, process=False)
+
+@app.route("/info", methods=["GET"])
+def youtube_info():
+    url = request.args.get("url")
+    if not url or not ("youtube.com" in url or "youtu.be" in url):
+        return jsonify({"success": False, "error": "URL do YouTube não fornecida"}), 400
+    try:
+        info = _youtube_extract(url)
+    except Exception as e:
+        print(f"[info] ERRO url={url}: {e}", flush=True)
+        return jsonify({"success": False, "error": str(e)}), 500
+    return jsonify({
+        "success": True,
+        "title": info.get("title"),
+        "videoid": info.get("id"),
+        "thumb": info.get("thumbnail"),
+        "duration": info.get("duration") or 0,
+        "views": info.get("view_count"),
+    })
+
+@app.route("/buscar", methods=["GET"])
+def youtube_buscar():
+    texto = (request.args.get("text") or "").strip()
+    if not texto:
+        return jsonify({"success": False, "error": "termo ou frase de busca não fornecido"}), 400
+    try:
+        # extract_flat evita abrir cada vídeo: a busca devolve só a listagem
+        res = _youtube_extract(f"ytsearch5:{texto}", extract_flat=True)
+    except Exception as e:
+        print(f"[buscar] ERRO texto={texto}: {e}", flush=True)
+        return jsonify({"success": False, "error": str(e)}), 500
+    data = []
+    for e in res.get("entries") or []:
+        if not e or not e.get("id"):
+            continue
+        segundos = int(e.get("duration") or 0)
+        thumbs = e.get("thumbnails") or []
+        data.append({
+            "title": e.get("title"),
+            "id": e["id"],
+            "url": f"https://youtube.com/watch?v={e['id']}",
+            "thumb": thumbs[0].get("url") if thumbs else None,
+            "views": e.get("view_count"),
+            "duration": {"seconds": segundos, "time": _formatar_duracao(segundos)},
+        })
+    return jsonify({"success": True, "data": data})
 
 # ---------- Cookie refresh (manual) ----------
 @app.route("/admin/refresh-cookies", methods=["POST"])

@@ -72,6 +72,10 @@ CLEANUP_MAX_AGE_MINUTES = int(os.getenv("CLEANUP_MAX_AGE_MINUTES", "5"))
 POT_SERVER_ENABLED = os.getenv("POT_SERVER_ENABLED", "1").strip().lower() not in ("0", "false", "no")
 POT_SERVER_PORT = int(os.getenv("POT_SERVER_PORT", "4416"))
 POT_SERVER_URL = os.getenv("POT_SERVER_URL", f"http://127.0.0.1:{POT_SERVER_PORT}")
+# Intervalo do watchdog que reinicia o servidor POT quando o /ping para de responder.
+POT_WATCHDOG_INTERVAL_SECONDS = float(os.getenv("POT_WATCHDOG_INTERVAL_SECONDS", "30"))
+# Log do processo Deno (antes ia pra DEVNULL e a causa das mortes se perdia).
+POT_SERVER_LOG = os.getenv("POT_SERVER_LOG", "/tmp/pot_server.log")
 
 # Porta do servidor
 PORT = int(os.getenv("PORT", "5000"))

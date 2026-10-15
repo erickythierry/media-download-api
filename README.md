@@ -9,6 +9,8 @@ Integra em um único projeto as APIs de: YouTube/geral, Pinterest, Twitter/X e F
 |--------|------|-----------|
 | GET | `/` | Health check |
 | POST/GET | `/download` | Baixar mídia. Use `type=audio` para áudio (apenas YouTube, formato m4a). |
+| GET | `/info?url=` | Título, id, thumb, duração (s) e views de um vídeo do YouTube. |
+| GET | `/buscar?text=` | Até 5 resultados de busca no YouTube (`id`, `title`, `duration.{seconds,time}`, `views`). |
 | GET | `/files/<filename>` | Baixar arquivo final |
 
 ## Configuração
@@ -24,6 +26,8 @@ Copie `.env.example` para `.env` e ajuste se precisar:
 - `YTDLP_USE_EJS`: `1` (default) habilita EJS do yt-dlp; use `0` para desativar
 - `POT_SERVER_ENABLED`: `1` (default) ativa o servidor local BgUtils / PO Token em porta 4416
 - `POT_SERVER_PORT`: porta do servidor POT (default: 4416)
+- `POT_WATCHDOG_INTERVAL_SECONDS`: intervalo do watchdog que reinicia o servidor POT após 2 `/ping` sem resposta (default: 30)
+- `POT_SERVER_LOG`: arquivo de log do processo Deno do POT (default: `/tmp/pot_server.log`)
 - `COOKIE_REFRESH_ENABLED`: `1` (default) ativa o renovador automático de cookies via Playwright
 - `COOKIE_REFRESH_INTERVAL_HOURS`: intervalo em horas para renovação (default: 2)
 - `YTDLP_COOKIES_FILE`: caminho para `cookies.txt` (Netscape) do YouTube — quando aparece “Sign in to confirm you’re not a bot”. Guia: **[YOUTUBE-COOKIES.md](YOUTUBE-COOKIES.md)**  
