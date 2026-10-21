@@ -47,4 +47,20 @@ except RuntimeError as e:
     assert "403" in str(e), e
 assert len(calls) == app.YOUTUBE_PROXY_RETRIES, (len(calls), app.YOUTUBE_PROXY_RETRIES)
 
+# 4. "not a bot" no V6 → cai para PROXY v4 e fica nele
+app.PROXY = "http://v4:1"
+calls = _mock(1, "ERROR: [youtube] x: Sign in to confirm you're not a bot")
+r = app._download_with_proxy_retry("u", {"proxy": "http://proxy:0", "outtmpl": "x.%(ext)s"})
+assert r == "ok.mp4", r
+assert calls == ["http://proxy:0", "http://v4:1"], calls
+
+# 5. "not a bot" já no v4 → levanta sem retry
+calls = _mock(9, "ERROR: Sign in to confirm you're not a bot")
+try:
+    app._download_with_proxy_retry("u", {"proxy": "http://v4:1", "outtmpl": "x.%(ext)s"})
+    raise AssertionError("deveria ter levantado")
+except RuntimeError:
+    pass
+assert len(calls) == 1, calls
+
 print("PASS — retry re-sorteia porta, respeita exceção e limite")

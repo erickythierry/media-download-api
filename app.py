@@ -209,16 +209,27 @@ def _download_with_proxy_retry(url: str, options: dict) -> str:
     """
     YouTube roda atrás do proxy V6 rotativo (porta aleatória). O YouTube
     bloqueia parte dos IPs de saída — stream de áudio cai com 403 em ~50% das
-    portas. A cada falha 403, re-sorteia a porta e tenta de novo.
+    portas. A cada falha 403, re-sorteia a porta e tenta de novo. Se o YouTube
+    pedir login ("not a bot") no V6, o IP da faixa inteira está queimado:
+    cai para o PROXY v4 (se houver e for diferente do atual).
     """
     for attempt in range(YOUTUBE_PROXY_RETRIES):
         try:
             return download_media(url, options)
         except Exception as e:
             is_last = attempt == YOUTUBE_PROXY_RETRIES - 1
-            if is_last or "403" not in str(e) or not options.get("proxy"):
+            msg = str(e)
+            if is_last or not options.get("proxy"):
                 raise
-            options["proxy"] = get_youtube_proxy()
+            if "not a bot" in msg and PROXY and options["proxy"] != PROXY:
+                print("[proxy_v6] 'not a bot' no V6, caindo para PROXY v4", flush=True)
+                options["proxy"] = PROXY
+            elif "403" in msg:
+                # já no v4 (fallback): não volta pro V6 queimado
+                if options["proxy"] != PROXY:
+                    options["proxy"] = get_youtube_proxy()
+            else:
+                raise
     raise RuntimeError("unreachable")
 
 
