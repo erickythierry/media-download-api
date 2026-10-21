@@ -281,9 +281,10 @@ def download():
             }
 
         else:
+            # teto de 1080p: o CDN (Cloudflare) recusa upload acima de ~100 MB e o 2160p AV1 passa disso
             options = {
                 **youtube_opts,
-                "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
+                "format": "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best[height<=1080]/best",
                 "merge_output_format": "mp4",
             }
             # options = {
