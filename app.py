@@ -293,9 +293,11 @@ def download():
 
         else:
             # teto de 1080p: o CDN (Cloudflare) recusa upload acima de ~100 MB e o 2160p AV1 passa disso
+            # H.264 porque o WhatsApp não reproduz AV1; res:1080 mede o lado menor, então Shorts verticais chegam a 1080x1920
             options = {
                 **youtube_opts,
-                "format": "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best[height<=1080]/best",
+                "format": "bv*[vcodec^=avc1]+ba[ext=m4a]/b[vcodec^=avc1]/b",
+                "format_sort": ["res:1080"],
                 "merge_output_format": "mp4",
             }
             # options = {
