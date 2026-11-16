@@ -425,13 +425,14 @@ def youtube_buscar():
         return jsonify({"success": False, "error": "termo ou frase de busca não fornecido"}), 400
     try:
         # extract_flat evita abrir cada vídeo: a busca devolve só a listagem
-        res = _youtube_extract(f"ytsearch5:{texto}", extract_flat=True)
+        res = _youtube_extract(f"ytsearch8:{texto}", extract_flat=True)
     except Exception as e:
         print(f"[buscar] ERRO texto={texto}: {e}", flush=True)
         return jsonify({"success": False, "error": str(e)}), 500
     data = []
     for e in res.get("entries") or []:
-        if not e or not e.get("id"):
+        # a busca flat também devolve canal e playlist; só vídeo serve para baixar
+        if not e or e.get("ie_key") != "Youtube" or len(e.get("id") or "") != 11:
             continue
         segundos = int(e.get("duration") or 0)
         thumbs = e.get("thumbnails") or []
@@ -443,6 +444,8 @@ def youtube_buscar():
             "views": e.get("view_count"),
             "duration": {"seconds": segundos, "time": _formatar_duracao(segundos)},
         })
+        if len(data) == 5:
+            break
     return jsonify({"success": True, "data": data})
 
 # ---------- Cookie refresh (manual) ----------

@@ -41,15 +41,16 @@ assert _roda_watchdog([False, False, False, False, True]) == 2
 client = app.app.test_client()
 
 app._youtube_extract = lambda alvo, **kw: {"entries": [
-    {"id": "abc", "title": "Musica", "duration": 3725, "view_count": 10,
+    {"id": "abcdefghijk", "ie_key": "Youtube", "title": "Musica", "duration": 3725, "view_count": 10,
      "thumbnails": [{"url": "http://t/1.jpg"}]},
+    {"id": "UCoUK-B7qPl3jY9-Kc1CGGgQ", "ie_key": "YoutubeTab", "title": "Canal"},
     {"id": None},
     None,
 ]}
 r = client.get("/buscar?text=musica").get_json()
 assert r["success"] and len(r["data"]) == 1, r
 item = r["data"][0]
-assert item["id"] == "abc" and item["url"] == "https://youtube.com/watch?v=abc", item
+assert item["id"] == "abcdefghijk" and item["url"] == "https://youtube.com/watch?v=abcdefghijk", item
 assert item["duration"] == {"seconds": 3725, "time": "1:02:05"}, item
 assert client.get("/buscar").status_code == 400
 
