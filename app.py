@@ -63,7 +63,7 @@ def get_youtube_proxy():
 
 
 def _youtube_extractor_args():
-    args = {"youtube": {"player_client": ["web_embedded", "mweb", "web"]}}
+    args = {"youtube": {"player_client": ["web_embedded", "mweb", "web", "tv_simply"]}}
     if POT_SERVER_ENABLED:
         args["youtubepot-bgutilhttp"] = {"base_url": [POT_SERVER_URL]}
     return args
