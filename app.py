@@ -343,6 +343,17 @@ def download():
             "merge_output_format": "mp4",
         }
 
+    # ---------- INSTAGRAM ----------
+    elif "instagram.com" in url:
+
+        platform = "instagram"
+        # DASH do Instagram é VP9 (o WhatsApp não reproduz); o progressivo é H.264 mas vem com vcodec "unknown", por isso o "b" sem filtro
+        options = {
+            **_ydl_base_opts(outtmpl),
+            "format": "b[vcodec^=avc1]/bv*[vcodec^=avc1]+ba/b/bv*+ba",
+            "merge_output_format": "mp4",
+        }
+
     # ---------- GENERIC ----------
     else:
 
